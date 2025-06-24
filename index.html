@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Task Manager & Notes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Basic Reset and Body Styles */
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #e0f2fe, #ede9fe); /* from-blue-100 to-purple-100 */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            color: #374151; /* gray-800 */
+        }
+
+        /* Utility Classes (mimicking Tailwind for the main layout) */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr; /* Default to single column on small screens */
+            gap: 2rem; /* gap-8 */
+            width: 100%;
+            max-width: 64rem; /* max-w-4xl */
+            margin-top: 2rem; /* mt-8 */
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .container {
+                grid-template-columns: 1fr 1fr; /* Two columns on medium screens and up */
+            }
+        }
+
+        .card {
+            background-color: #fff; /* bg-white */
+            padding: 1.5rem 2rem; /* p-6 md:p-8 */
+            border-radius: 1rem; /* rounded-2xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+        }
+
+        .title {
+            font-size: 2.25rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            text-align: center;
+            margin-bottom: 1.5rem; /* mb-6 */
+        }
+
+        .subtitle {
+            font-size: 1.875rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-gray-500 {
+            color: #6b7280;
+        }
+
+        .italic {
+            font-style: italic;
+        }
+
+        /* Input and Button Styles */
+        .input-group {
+            display: flex;
+            gap: 0.75rem; /* gap-3 */
+            margin-bottom: 1.5rem; /* mb-6 */
+            flex-direction: column; /* Stack inputs on small screens */
+        }
+
+        @media (min-width: 640px) { /* sm breakpoint for inputs */
+            .input-group {
+                flex-direction: row; /* Row on larger screens */
+            }
+        }
+
+        .input-group.notes-inputs {
+             flex-direction: column;
+        }
+
+
+        .input-field {
+            flex-grow: 1;
+            padding: 0.75rem; /* p-3 */
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-radius: 0.5rem; /* rounded-lg */
+            outline: none;
+        }
+        .input-field:focus {
+            ring: 2px solid #60a5fa; /* focus:ring-2 focus:ring-blue-400 */
+            border-color: #60a5fa;
+        }
+
+        /* Styles specifically for the textarea */
+        textarea.input-field {
+            min-height: 5rem; /* Adjust as needed */
+            resize: vertical; /* Allow vertical resizing */
+        }
+
+        .btn {
+            background-color: #3b82f6; /* bg-blue-600 */
+            color: #fff; /* text-white */
+            padding: 0.75rem; /* p-3 */
+            border-radius: 0.5rem; /* rounded-lg */
+            transition: background-color 0.2s, transform 0.2s;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: none;
+            flex-shrink: 0; /* Don't shrink button in flex row */
+        }
+        .btn:hover {
+            background-color: #2563eb; /* hover:bg-blue-700 */
+            transform: scale(1.05); /* hover:scale-105 */
+        }
+        .btn.purple {
+            background-color: #9333ea; /* bg-purple-600 */
+        }
+        .btn.purple:hover {
+            background-color: #7c229f; /* hover:bg-purple-700 */
+        }
+        .btn.red {
+            background-color: #ef4444; /* bg-red-500 */
+        }
+        .btn.red:hover {
+            background-color: #dc2626; /* hover:bg-red-600 */
+        }
+        .btn.green {
+            background-color: #22c55e; /* bg-green-500 */
+        }
+        .btn.green:hover {
+            background-color: #16a34a; /* hover:bg-green-600 */
+        }
+        .btn.edit-btn {
+            background: none;
+            border: none;
+            box-shadow: none;
+            color: #4a5568; /* gray-700 */
+            padding: 0;
+            margin-left: 0.5rem;
+            transform: none;
+        }
+        .btn.edit-btn:hover {
+            color: #2b6cb0; /* blue-800 */
+            transform: scale(1.1);
+        }
+
+
+        /* List Styles */
+        .list-container {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            space-y: 0.75rem; /* space-y-3 */
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem; /* p-4 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb; /* border-gray-200 */
+        }
+        .list-item.task-item {
+            background-color: #f9fafb; /* bg-gray-50 */
+        }
+        .list-item.task-item.completed {
+            background-color: #ecfdf5; /* bg-green-50 */
+            border-color: #a7f3d0; /* border-green-200 */
+        }
+        .list-item.note-item {
+            background-color: #fffbeb; /* bg-yellow-50 */
+            border-color: #fde68a; /* border-yellow-200 */
+            align-items: flex-start; /* Align notes to top */
+        }
+
+        /* Drag and Drop Styles */
+        .list-item.dragging {
+            opacity: 0.5;
+            border: 2px dashed #9333ea; /* purple-600 */
+        }
+        .list-item.drag-over {
+            border-top: 2px solid #3b82f6; /* blue-600 */
+        }
+
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            flex-direction: column; /* Stack text and times */
+            align-items: flex-start; /* Align text and times to left */
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            flex-grow: 1; /* Allow checkbox/text to grow */
+        }
+
+        .task-text {
+            margin-left: 0.75rem; /* ml-3 */
+            font-size: 1.125rem; /* text-lg */
+            color: #374151; /* text-gray-800 */
+        }
+        .task-text.completed {
+            text-decoration: line-through;
+            color: #6b7280; /* text-gray-500 */
+        }
+
+        .task-timestamps {
+            margin-left: 2rem; /* ml-8 */
+            font-size: 0.75rem; /* text-xs */
+            color: #6b7280; /* text-gray-500 */
+            margin-top: 0.25rem; /* mt-1 */
+        }
+
+        .note-content {
+            flex-grow: 1;
+            font-size: 1.125rem; /* text-lg */
+            color: #374151; /* text-gray-800 */
+            word-break: break-word; /* break-words */
+            padding-right: 0.5rem; /* pr-2 */
+            white-space: pre-wrap; /* Preserve whitespace and newlines */
+        }
+
+        .note-link {
+            color: #1d4ed8; /* text-blue-700 */
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            white-space: pre-wrap; /* Preserve whitespace and newlines for link text */
+        }
+        .note-link:hover {
+            text-decoration: underline;
+        }
+
+        .icon {
+            height: 1.25rem; /* h-5 */
+            width: 1.25rem; /* w-5 */
+            margin-right: 0.5rem; /* mr-2 */
+        }
+
+        .pdf-icon {
+            color: #ef4444; /* text-red-500 */
+        }
+
+        /* Checkbox Customization (basic) */
+        input[type="checkbox"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            display: inline-block;
+            width: 1.25rem; /* w-5 */
+            height: 1.25rem; /* h-5 */
+            border: 1px solid #9ca3af; /* border-gray-400 */
+            border-radius: 0.25rem; /* rounded-md */
+            cursor: pointer;
+            vertical-align: middle;
+            position: relative;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: #3b82f6; /* text-blue-600 */
+            border-color: #3b82f6;
+        }
+
+        input[type="checkbox"]:checked::before {
+            content: '✔';
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        /* Task action buttons container */
+        .task-action-buttons {
+            display: flex;
+            gap: 0.5rem; /* Space between buttons */
+            align-items: center;
+            margin-left: 1rem; /* Adjust spacing from task text */
+        }
+
+        /* Styles for the editable input when editing a task */
+        .task-edit-input {
+            margin-left: 0.75rem; /* ml-3 */
+            font-size: 1.125rem; /* text-lg */
+            color: #374151; /* text-gray-800 */
+            border: 1px solid #a0aec0; /* gray-400 */
+            border-radius: 0.25rem;
+            padding: 0.2rem 0.4rem;
+            flex-grow: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            <h1 class="title" style="color: #2563eb;">Exam Task Manager</h1>
+            <p id="current-datetime" class="text-sm text-gray-600 text-center mb-4"></p>
+
+            <div class="input-group">
+                <input type="text" id="new-task-text" class="input-field" placeholder="Add a new exam task...">
+                <button id="add-task-btn" class="btn">Add Task</button>
+            </div>
+
+            <ul id="task-list" class="list-container">
+                </ul>
+            <p id="no-tasks-message" class="text-center text-gray-500 italic" style="display: none;">No tasks yet. Add your first exam task!</p>
+        </div>
+
+        <div class="card">
+            <h2 class="title" style="color: #7e22ce;">Important Notes</h2>
+
+            <div class="input-group notes-inputs">
+                <textarea id="new-note-text" class="input-field" placeholder="Add a new note or topic..." rows="4"></textarea>
+                <input type="url" id="new-note-url" class="input-field" placeholder="Paste PDF link (optional)">
+                <button id="add-note-btn" class="btn purple">Add Note</button>
+            </div>
+
+            <ul id="note-list" class="list-container">
+                </ul>
+            <p id="no-notes-message" class="text-center text-gray-500 italic" style="display: none;">No notes yet. Add important topics or reminders here!</p>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const currentDateTimeElem = document.getElementById('current-datetime');
+        const newTaskTextInput = document.getElementById('new-task-text');
+        const addTaskBtn = document.getElementById('add-task-btn');
+        const taskList = document.getElementById('task-list');
+        const noTasksMessage = document.getElementById('no-tasks-message');
+
+        const newNoteTextInput = document.getElementById('new-note-text');
+        const newNoteUrlInput = document.getElementById('new-note-url');
+        const addNoteBtn = document.getElementById('add-note-btn');
+        const noteList = document.getElementById('note-list');
+        const noNotesMessage = document.getElementById('no-notes-message');
+
+        // --- Data Storage (localStorage) ---
+        let tasks = JSON.parse(localStorage.getItem('examTasks')) || [];
+        let notes = JSON.parse(localStorage.getItem('examNotes')) || [];
+
+        // --- Drag and Drop Global State ---
+        let draggedTaskId = null;
+
+        // --- Utility Functions ---
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function saveTasks() {
+            localStorage.setItem('examTasks', JSON.stringify(tasks));
+            renderTasks(); // Re-render after every save
+        }
+
+        function saveNotes() {
+            localStorage.setItem('examNotes', JSON.stringify(notes));
+            renderNotes(); // Re-render after every save
+        }
+
+        function formatDuration(ms) {
+            if (ms === null || ms === undefined || isNaN(ms)) return 'N/A';
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            let parts = [];
+            if (days > 0) parts.push(`${days}d`);
+            if (hours % 24 > 0) parts.push(`${hours % 24}h`);
+            if (minutes % 60 > 0) parts.push(`${minutes % 60}m`);
+            if (seconds % 60 > 0 || parts.length === 0) parts.push(`${seconds % 60}s`);
+
+            return parts.join(' ');
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+
+        // --- Render Functions ---
+        function renderTasks() {
+            taskList.innerHTML = ''; // Clear current list
+
+            if (tasks.length === 0) {
+                noTasksMessage.style.display = 'block';
+                return;
+            } else {
+                noTasksMessage.style.display = 'none';
+            }
+
+            // Tasks are rendered in their current order in the array for reordering
+            // No explicit sort here, as drag-and-drop will manage order
+
+            tasks.forEach(task => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('list-item', 'task-item');
+                listItem.setAttribute('draggable', 'true'); // Make draggable
+                listItem.dataset.id = task.id; // Store task ID on the element
+
+                if (task.completed) {
+                    listItem.classList.add('completed');
+                }
+
+                let actionButtonsHtml = '';
+                // Only show Start button if not completed and not already started
+                if (!task.completed && !task.startedAt) {
+                    actionButtonsHtml = `<button class="btn green start-task-btn" data-id="${task.id}">Start</button>`;
+                } else if (!task.completed && task.startedAt) {
+                    // If started but not completed, just show "Started" text (no reset button)
+                    actionButtonsHtml = `<span class="text-sm text-gray-500">Started</span>`;
+                }
+                // No "Resume" button as per request
+
+
+                listItem.innerHTML = `
+                    <label class="checkbox-label">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" data-id="${task.id}" ${task.completed ? 'checked' : ''}>
+                            <span class="task-text ${task.completed ? 'completed' : ''}" data-id="${task.id}">${task.text}</span>
+                            <button class="btn edit-btn" data-id="${task.id}" aria-label="Edit task name">✏️</button>
+                        </div>
+                        <div class="task-timestamps">
+                            <p>Created: ${formatDate(task.createdAt)}</p>
+                            ${task.startedAt ? `<p>Started: ${formatDate(task.startedAt)}</p>` : ''}
+                            ${task.completed ? `<p>Completed: ${formatDate(task.completedAt)}</p>` : ''}
+                            ${task.completed && task.duration !== null ? `<p>Duration: ${formatDuration(task.duration)}</p>` : ''}
+                        </div>
+                    </label>
+                    <div class="task-action-buttons">
+                        ${actionButtonsHtml}
+                        <button class="btn red delete-task-btn" data-id="${task.id}" aria-label="Delete task">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 11-2 0v6a1 1 0 112 0V8z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                taskList.appendChild(listItem);
+            });
+
+            // Re-attach event listeners after re-rendering
+            attachTaskEventListeners();
+        }
+
+        function renderNotes() {
+            noteList.innerHTML = ''; // Clear current list
+
+            if (notes.length === 0) {
+                noNotesMessage.style.display = 'block';
+                return;
+            } else {
+                noNotesMessage.style.display = 'none';
+            }
+
+            // Sort notes by creation date
+            notes.sort((a, b) => a.createdAt - b.createdAt);
+
+            notes.forEach(note => {
+                const listItem = document.createElement('li');
+                listItem.classList.add('list-item', 'note-item');
+
+                // Create a div for the content to apply white-space: pre-wrap
+                const contentDiv = document.createElement('div');
+                contentDiv.classList.add('note-content');
+
+                if (note.url) {
+                    const link = document.createElement('a');
+                    link.href = note.url;
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                    link.classList.add('note-link');
+
+                    const svgIcon = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon pdf-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0113 3.414L16.586 7A2 2 0 0118 8.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 2h2v2H6V6zm4 0h4v2h-4V6zm0 4h4v2h-4v-2z" clip-rule="evenodd" />
+                        </svg>
+                    `;
+                    link.innerHTML = svgIcon + (note.text || 'Link to PDF');
+                    contentDiv.appendChild(link);
+                } else {
+                    contentDiv.textContent = note.text; // Use textContent to prevent HTML injection
+                }
+
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('btn', 'red', 'delete-note-btn');
+                deleteButton.dataset.id = note.id;
+                deleteButton.setAttribute('aria-label', 'Delete note');
+                deleteButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 11-2 0v6a1 1 0 112 0V8z" clip-rule="evenodd" />
+                    </svg>
+                `;
+
+                listItem.appendChild(contentDiv);
+                listItem.appendChild(deleteButton);
+                noteList.appendChild(listItem);
+            });
+
+            // Re-attach event listeners after re-rendering
+            attachNoteEventListeners();
+        }
+
+        // --- Task Management Functions ---
+        function addTask() {
+            const text = newTaskTextInput.value.trim();
+            if (!text) return;
+
+            const newTask = {
+                id: generateId(),
+                text: text,
+                completed: false,
+                createdAt: Date.now(),
+                startedAt: null, // Still keep startedAt for display
+                completedAt: null,
+                duration: null
+            };
+            tasks.push(newTask);
+            newTaskTextInput.value = '';
+            saveTasks();
+        }
+
+        function startTask(id) {
+            const taskIndex = tasks.findIndex(task => task.id === id);
+            if (taskIndex > -1) {
+                const task = tasks[taskIndex];
+                if (!task.completed && !task.startedAt) { // Only start if not completed and not already started
+                    task.startedAt = Date.now();
+                    saveTasks();
+                }
+            }
+        }
+
+        // Removed resetTaskStart function as per request
+
+        // Removed resumeTask function as per request
+
+        function toggleTaskCompletion(id) {
+            const taskIndex = tasks.findIndex(task => task.id === id);
+            if (taskIndex > -1) {
+                const task = tasks[taskIndex];
+                if (!task.completed) {
+                    // Mark as completed
+                    const now = Date.now();
+                    task.completed = true;
+                    task.completedAt = now;
+                    // Calculate duration from createdAt to completedAt (original logic)
+                    task.duration = now - task.createdAt;
+                } else {
+                    // Mark as incomplete
+                    task.completed = false;
+                    task.completedAt = null;
+                    task.duration = null;
+                    // Do not reset startedAt here, it remains as an informational timestamp
+                }
+                saveTasks();
+            }
+        }
+
+        function editTaskName(event, id) {
+            // Stop event propagation to prevent the label from triggering the checkbox
+            event.stopPropagation();
+
+            const taskIndex = tasks.findIndex(task => task.id === id);
+            if (taskIndex === -1) return;
+
+            const task = tasks[taskIndex];
+            // Find the specific span element for the task text
+            const taskTextSpan = taskList.querySelector(`.task-text[data-id="${id}"]`);
+            const editButton = taskList.querySelector(`.edit-btn[data-id="${id}"]`);
+            const checkboxWrapper = taskTextSpan.closest('.checkbox-wrapper'); // Find the parent wrapper
+
+            if (!taskTextSpan || !editButton || !checkboxWrapper) return; // Safety check
+
+            // Create an input field
+            const inputField = document.createElement('input');
+            inputField.type = 'text';
+            inputField.value = task.text;
+            inputField.classList.add('task-edit-input'); // Apply new styling
+            inputField.dataset.id = id; // Add data-id for reference
+
+            // Replace the span with the input field
+            checkboxWrapper.replaceChild(inputField, taskTextSpan);
+            // Hide the edit button during editing
+            editButton.style.display = 'none';
+
+
+            inputField.focus(); // Focus the input field
+
+            // Event listener for when the input loses focus (blur)
+            inputField.addEventListener('blur', (e) => {
+                const newText = e.target.value.trim();
+                if (newText && newText !== task.text) {
+                    task.text = newText;
+                    saveTasks();
+                } else {
+                    // If empty or no change, revert to original text and re-render
+                    saveTasks(); // Simply re-render to revert
+                }
+            });
+
+            // Event listener for 'Enter' key press
+            inputField.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    inputField.blur(); // Trigger blur to save changes
+                }
+            });
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(task => task.id !== id);
+            saveTasks();
+        }
+
+        // --- Note Management Functions ---
+        function addNote() {
+            const text = newNoteTextInput.value.trim(); // Trim only for initial check
+            const url = newNoteUrlInput.value.trim();
+
+            if (!text && !url) return; // Don't add if both are empty
+
+            const newNote = {
+                id: generateId(),
+                text: newNoteTextInput.value, // Store raw value to preserve newlines/spaces
+                url: url || null, // Store URL, or null if empty
+                createdAt: Date.now()
+            };
+            notes.push(newNote);
+            newNoteTextInput.value = '';
+            newNoteUrlInput.value = '';
+            saveNotes();
+        }
+
+        function deleteNote(id) {
+            notes = notes.filter(note => note.id !== id);
+            saveNotes();
+        }
+
+        // --- Drag and Drop Handlers ---
+        function handleDragStart(e) {
+            draggedTaskId = e.target.dataset.id;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedTaskId);
+            setTimeout(() => {
+                e.target.classList.add('dragging');
+            }, 0); // Add class after a slight delay to avoid flickering
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); // Necessary to allow dropping
+            e.dataTransfer.dropEffect = 'move';
+            const targetItem = e.target.closest('.list-item.task-item');
+            if (targetItem && targetItem.dataset.id !== draggedTaskId) {
+                // Remove drag-over from all others
+                taskList.querySelectorAll('.list-item.task-item').forEach(item => {
+                    item.classList.remove('drag-over');
+                });
+                // Add drag-over to the current target
+                targetItem.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            e.target.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.target.classList.remove('drag-over');
+
+            const dropTargetId = e.target.closest('.list-item.task-item')?.dataset.id;
+
+            if (draggedTaskId === null || dropTargetId === null || draggedTaskId === dropTargetId) {
+                return; // No valid drag or dropping on self
+            }
+
+            const draggedIndex = tasks.findIndex(t => t.id === draggedTaskId);
+            const dropTargetIndex = tasks.findIndex(t => t.id === dropTargetId);
+
+            if (draggedIndex === -1 || dropTargetIndex === -1) {
+                return;
+            }
+
+            // Remove the dragged task
+            const [draggedTask] = tasks.splice(draggedIndex, 1);
+
+            // Insert it at the new position
+            tasks.splice(dropTargetIndex, 0, draggedTask);
+
+            saveTasks(); // Save and re-render
+        }
+
+        function handleDragEnd(e) {
+            taskList.querySelectorAll('.list-item.task-item').forEach(item => {
+                item.classList.remove('dragging', 'drag-over');
+            });
+            draggedTaskId = null; // Reset dragged task ID
+        }
+
+
+        // --- Event Listeners ---
+        function attachTaskEventListeners() {
+            // Checkbox toggle
+            taskList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.onchange = (e) => toggleTaskCompletion(e.target.dataset.id);
+            });
+            // Delete button
+            taskList.querySelectorAll('.delete-task-btn').forEach(button => {
+                button.onclick = (e) => deleteTask(e.currentTarget.dataset.id);
+            });
+            // Start button
+            taskList.querySelectorAll('.start-task-btn').forEach(button => {
+                button.onclick = (e) => startTask(e.currentTarget.dataset.id);
+            });
+            // Removed event listener for reset-start-btn
+            // Removed event listener for resume-btn
+            // Edit button
+            taskList.querySelectorAll('.edit-btn').forEach(button => {
+                button.onclick = (e) => editTaskName(e, e.currentTarget.dataset.id);
+            });
+
+            // Drag and Drop listeners
+            taskList.querySelectorAll('.list-item.task-item').forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('dragleave', handleDragLeave);
+                item.addEventListener('drop', handleDrop);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+        }
+
+        function attachNoteEventListeners() {
+            noteList.querySelectorAll('.delete-note-btn').forEach(button => {
+                button.onclick = (e) => deleteNote(e.currentTarget.dataset.id);
+            });
+        }
+
+        // --- Initial Load and Real-time Clock ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTasks();
+            renderNotes();
+
+            // Update current date and time every second
+            setInterval(() => {
+                currentDateTimeElem.textContent = new Date().toLocaleString();
+            }, 1000);
+        });
+
+        // Add Task via button click or Enter key
+        addTaskBtn.addEventListener('click', addTask);
+        newTaskTextInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+
+        // Add Note via button click or Enter key
+        addNoteBtn.addEventListener('click', addNote);
+        // Changed keypress listener for textarea to allow Enter for newlines,
+        // and only trigger addNote on Shift+Enter or Ctrl+Enter
+        newNoteTextInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.shiftKey || e.ctrlKey)) {
+                e.preventDefault(); // Prevent default Enter behavior (new line)
+                addNote();
+            }
+        });
+        newNoteUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addNote();
+            }
+        });
+
+    </script>
+</body>
+</html>
